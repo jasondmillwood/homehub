@@ -1,0 +1,72 @@
+{
+  "_comment": "Copy to ~/.config/homehub/config.json (mode 600). Every personal value lives here. Secrets are FILE PATHS, never values.",
+  "site": { "title": "Home", "subtitle": "HUB", "port": 8090, "bind": "0.0.0.0" },
+  "network": { "allowed_nets": ["127.0.0.0/8", "192.168.1.0/24", "100.64.0.0/10"] },
+  "paths": { "db": "~/.local/share/homehub/hub.db", "state_dir": "~/.local/state/homehub", "status_dir": "~/.local/share/homehub/status" },
+  "secrets": {
+    "hub_token_file": "~/.config/homehub/hub.token",
+    "ntfy_token_file": "",
+    "xai_api_key_file": ""
+  },
+  "modules": {
+    "starlink": {
+      "enabled": true,
+      "monitor_url": "http://127.0.0.1:8787",
+      "poll_interval_s": 60,
+      "history": true,
+      "retain_days": 90
+    },
+    "speedtest": {
+      "enabled": false,
+      "tool": "librespeed",
+      "ookla_license_accepted": false,
+      "binary": "",
+      "times": ["11:30", "19:30"],
+      "iface": "",
+      "dish_slot": ""
+    },
+    "drives": {
+      "enabled": true,
+      "dump_globs": ["/var/lib/smart-dump/*.json"],
+      "hot_c": 45,
+      "hot_c_ssd": 60,
+      "stale_after_s": 7200,
+      "devices": {
+        "_example_usb_serial": { "label": "USB backup drive", "stale_after_s": 93600, "hot_c": 50, "usb_sleep_safe": true }
+      }
+    },
+    "backups": {
+      "enabled": false,
+      "jobs": [
+        { "id": "home", "name": "Home backup", "status_file": "backup-home.json", "max_age_h": 26 },
+        { "id": "usb", "name": "USB copy", "status_file": "usb-copy.json", "max_age_h": 26, "low_free_gb": 50 }
+      ]
+    },
+    "machines": {
+      "enabled": false,
+      "check_interval_s": 30,
+      "hosts": [
+        { "name": "nas", "host": "192.168.1.20", "ports": [22], "push": false }
+      ]
+    },
+    "gpu": {
+      "enabled": false,
+      "folding_at_home": false,
+      "fah_ws": "ws://127.0.0.1:7396/api/websocket",
+      "fah_stats": false
+    },
+    "alerts": {
+      "enabled": false,
+      "ntfy_url": "https://ntfy.sh",
+      "ntfy_topic": "",
+      "min_level": "red",
+      "repeat_after_min": 360,
+      "quiet_hours": ""
+    },
+    "explain": {
+      "enabled": false,
+      "model": "grok-4",
+      "api_base": "https://api.x.ai/v1"
+    }
+  }
+}

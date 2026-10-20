@@ -1,0 +1,30 @@
+#!/bin/bash
+# /usr/local/sbin/smart-dump-usb <by-id path>  (root). Sleep-safe SMART reading for a USB drive that sleeps most
+# of the day (e.g. a nightly backup target). Run it right AFTER the backup, while the drive is still spinning:
+#   systemd drop-in on the backup unit:  [Service]  ExecStopPost=+/usr/local/sbin/smart-dump-usb /dev/disk/by-id/usb-...
+# It never spins the drive up, never mounts or reads any filesystem (SMART is device-level), runs a short
+# non-destructive self-test, writes the JSON atomically, and always exits 0 so it can never fail the backup.
+set -u
+DEV=${1:?usage: smart-dump-usb /dev/disk/by-id/usb-...}
+TYPE=${SMART_DEVTYPE:-sat}                 # most USB-SATA bridges; try sat,12 or usbjmicron if sat fails
+OUT_DIR=/var/lib/smart-dump
+OUT=$OUT_DIR/$(basename "$DEV" | sed 's/-0:0$//; s/[^A-Za-z0-9_.-]/_/g').json
+ASLEEP=3                                   # exit code we ask smartctl to use when the drive is in standby/sleep
+SC=(smartctl -d "$TYPE" -n "standby,$ASLEEP")
+log(){ echo "smart-dump-usb: $*"; }
+[ -e "$DEV" ] || { log "drive not attached, nothing to do"; exit 0; }
+"${SC[@]}" -i "$DEV" >/dev/null; rc=$?
+[ $rc -eq $ASLEEP ] && { log "drive already asleep, skipping (not waking it)"; exit 0; }
+if [ "${SMART_SHORT_TEST:-1}" = 1 ] && "${SC[@]}" -t short "$DEV" >/dev/null; then
+  for _ in $(seq 1 30); do                 # wait up to 5 min
+    sleep 10
+    "${SC[@]}" -c "$DEV" | grep -q "Self-test routine in progress" || break
+  done
+fi
+mkdir -p "$OUT_DIR"; chmod 755 "$OUT_DIR"
+"${SC[@]}" -x -j "$DEV" > "$OUT.tmp"; rc=$?
+if [ $rc -eq $ASLEEP ] || [ $((rc & 3)) -ne 0 ] || [ ! -s "$OUT.tmp" ]; then
+  log "no reading (rc=$rc); previous dump kept"; rm -f "$OUT.tmp"; exit 0
+fi
+chmod 644 "$OUT.tmp" && mv -f "$OUT.tmp" "$OUT" && log "ok (smartctl rc=$rc)"
+exit 0

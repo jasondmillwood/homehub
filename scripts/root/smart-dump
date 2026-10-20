@@ -1,0 +1,25 @@
+#!/bin/sh
+# /usr/local/sbin/smart-dump (root). Writes `smartctl -x -j` per drive to /var/lib/smart-dump (world-readable)
+# so the hub can read SMART data without root. Uses -n standby: a sleeping drive is skipped, never woken.
+# Optional: if /etc/homehub/hub.url and /etc/homehub/hub.token exist (another machine), each dump is pushed
+# to the hub instead of being read locally.
+out=/var/lib/smart-dump; mkdir -p "$out"; chmod 755 "$out"
+for d in /dev/disk/by-id/ata-* /dev/disk/by-id/nvme-*; do
+  case "$d" in *-part*|*nvme-eui*) continue;; esac
+  [ -e "$d" ] || continue
+  case "$(readlink -f "$d")" in /dev/sr*) continue;; esac          # skip optical drives
+  n=$(basename "$d")
+  smartctl -x -j -n standby,0 "$d" > "$out/$n.json.tmp" 2>/dev/null  # exit code is a bitmask; ignore it
+  chmod 644 "$out/$n.json.tmp"
+  if grep -q '"smart_status"' "$out/$n.json.tmp"; then mv -f "$out/$n.json.tmp" "$out/$n.json"
+  else mv -f "$out/$n.json.tmp" "$out/$n.skipped.json"; fi           # asleep/error: keep the last good dump
+done
+if [ -r /etc/homehub/hub.url ] && [ -r /etc/homehub/hub.token ]; then
+  url=$(cat /etc/homehub/hub.url); tok=$(cat /etc/homehub/hub.token); host=$(hostname -s | tr 'A-Z' 'a-z')
+  for f in "$out"/*.json; do
+    case "$f" in *.skipped.json) continue;; esac
+    curl -fsS -m 20 -H "X-Hub-Token: $tok" -H "Content-Type: application/json" --data-binary "@$f" \
+      "$url/api/drives/push?host=$host" >/dev/null 2>&1 || true
+  done
+fi
+exit 0

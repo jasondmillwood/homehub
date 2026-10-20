@@ -1,0 +1,20 @@
+homehub third-party notices
+===========================
+
+homehub is pure Python (3.10+) and uses only the standard library. It bundles and vendors no
+third-party code, so no third-party license texts ship with it. scripts/license-check.py enforces this in CI.
+
+External programs homehub can CALL, but does not include. They are installed separately by you
+(or by install.sh only when you ask), each under its own license:
+
+| Program | Used by | License | How it is obtained |
+|---|---|---|---|
+| dish-monitor v0.1.0 (github.com/jasondmillwood/dish-monitor) | starlink module | MIT | optional; install.sh --with-dish-monitor downloads its installer (sha256-pinned) |
+| smartmontools (smartctl) | drives module, scripts/root | GPL-2.0-or-later | your distribution's package manager; run as a separate program |
+| LibreSpeed speedtest-cli 1.0.14 | speedtest module (default) | LGPL-3.0 | optional download from its GitHub releases, sha256-pinned; unmodified binary |
+| Ookla Speedtest CLI 1.2.0 | speedtest module (alternative) | Proprietary (Ookla EULA) | only after you accept Ookla's license and privacy terms interactively; never redistributed |
+| NVIDIA nvidia-smi | gpu module | NVIDIA driver license | part of your NVIDIA driver |
+| Folding@home client v8 | gpu module (optional) | GPL-3.0 | from foldingathome.org; homehub only reads its local WebSocket |
+| ntfy (ntfy.sh or self-hosted) | alerts module | Apache-2.0 / GPL-2.0 (server) | network service; homehub sends HTTP POSTs |
+| xAI API (api.x.ai) | explain module (off by default) | xAI terms of service | network service; requires your own API key |
+| curl | install.sh, helper scripts | curl license (MIT-style) | your distribution |

@@ -1,0 +1,11 @@
+#!/bin/sh
+# /usr/local/bin/smart-event (root): smartmontools daemon "-M exec" hook (it sets the variables below). Logs to the journal and, if configured, posts the
+# event to the hub (/etc/homehub/hub.url + /etc/homehub/hub.token, both root-only). No mail.
+logger -t smart-event -- "${SMARTD_DEVICE:-?} ${SMARTD_FAILTYPE:-?}: ${SMARTD_MESSAGE:-}"
+if [ -r /etc/homehub/hub.url ] && [ -r /etc/homehub/hub.token ]; then
+  curl -fsS -m 10 -H "X-Hub-Token: $(cat /etc/homehub/hub.token)" \
+    --data-urlencode "host=$(hostname -s | tr 'A-Z' 'a-z')" --data-urlencode "device=${SMARTD_DEVICE:-}" \
+    --data-urlencode "type=${SMARTD_FAILTYPE:-}" --data-urlencode "msg=${SMARTD_MESSAGE:-}" \
+    "$(cat /etc/homehub/hub.url)/api/drive-event" >/dev/null 2>&1 || true
+fi
+exit 0

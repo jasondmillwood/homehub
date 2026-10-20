@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+config.json
+config.*.local.json
+*.db
+*.db-*
+*.token
+*token*
+*.key
+state/
+status/
+.env
+*.bak
+.DS_Store

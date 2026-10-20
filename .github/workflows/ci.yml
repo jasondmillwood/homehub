@@ -1,0 +1,34 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for the scrub
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Unit and server tests
+        run: python -W error::ResourceWarning -m unittest discover -s tests -v
+      - name: Installer test (throwaway HOME, no root, no network)
+        run: bash tests/test_install.sh
+      - name: Shell syntax and lint
+        run: |
+          for f in install.sh scripts/*.sh scripts/root/smart-dump scripts/root/smart-dump-usb scripts/root/smart-event tests/*.sh; do bash -n "$f"; done
+          shellcheck -S warning install.sh scripts/*.sh scripts/root/smart-dump scripts/root/smart-dump-usb scripts/root/smart-event
+      - name: Config check (example config)
+        run: python -m homehub --config config.example.json --check
+      - name: Public scrub (tree + history)
+        run: python3 scripts/public-scrub.py --history .
+      - name: License check
+        run: python3 scripts/license-check.py

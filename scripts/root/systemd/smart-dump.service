@@ -1,0 +1,6 @@
+[Unit]
+Description=Dump SMART data for homehub (skips sleeping drives)
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/smart-dump
+Nice=10

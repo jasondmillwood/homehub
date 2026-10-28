@@ -67,6 +67,13 @@
       "enabled": false,
       "model": "grok-4",
       "api_base": "https://api.x.ai/v1"
+    },
+    "alerts_tab": {
+      "_comment": "Alerts button on the dashboard. auto = on when any tile module is on. labels renames tiles by id, e.g. {\"starlink-roof\": \"Home dish\"}.",
+      "enabled": "auto",
+      "min_level": "amber",
+      "labels": {},
+      "hide_fields": ["host"]
     }
   }
 }

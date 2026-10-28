@@ -45,6 +45,7 @@ Every module is optional. A disabled module draws no tile and starts no backgrou
 | `machines` | off | TCP/ping reachability plus optional pushed health (any OS) | nothing |
 | `gpu` | off | `nvidia-smi` load/temp/power; Folding@home status and PPD | NVIDIA driver; F@H v8 client (optional) |
 | `alerts` | off | ntfy push on problems, reminders, recovery, quiet hours | an ntfy topic (ntfy.sh or self-hosted) |
+| `alerts_tab` | auto | an **Alerts** button: every amber/red tile, worst first; tap one to see only the culprit | nothing (on when any tile module is on) |
 | `explain` | off | a button that asks xAI's Grok to explain current problems | an xAI API key file |
 
 ## Configuration
@@ -87,6 +88,28 @@ LibreSpeed CLI (LGPL-3.0, open source) is the default; the installer downloads t
 its sha256. The Ookla CLI is proprietary: the installer shows Ookla's license and privacy links and only
 downloads it after you type `accept` at a terminal, and the config needs `"ookla_license_accepted": true`.
 Neither is bundled.
+
+### Alerts tab
+The header shows **Alerts** with a count badge (red if anything is red, amber for warnings). It opens a list of every
+amber/red tile, worst first. Tapping, clicking or pressing Enter on an alert opens **Alert · <tile>**: only the tile
+lines at that level and only the detail rows that are themselves amber/red (the failing drive, the unreachable host,
+the backup that failed), each with its reason. **← All alerts** goes back, **Full detail →** opens the whole tile,
+Esc closes. Views are links: `#alerts`, `#alert:<tile id>` (e.g. `#alert:drives`). Data: `GET /api/alerts`.
+
+Names come from the tiles, which come from your config (`machines.hosts[].name`, drive `label`, dish labels).
+Rename any tile in the Alerts view by id without touching the module:
+
+```json
+"alerts_tab": {
+  "enabled": "auto",
+  "min_level": "amber",
+  "labels": { "starlink-roof": "Roof dish", "machines": "Computers" },
+  "hide_fields": ["host"]
+}
+```
+
+`enabled`: `true`, `false`, or `"auto"` (default: on only when a module that makes tiles is on). `min_level`: `amber`
+or `red`. `hide_fields`: detail fields never shown in a culprit view.
 
 ### Machines on other operating systems
 v0.1.0 ships Linux helper scripts only. Any machine (Windows, macOS, a NAS) can still report by POSTing JSON

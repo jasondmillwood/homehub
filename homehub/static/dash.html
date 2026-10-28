@@ -26,13 +26,24 @@ button:hover{background:#2c2c2c}
 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid #1a1a1a;vertical-align:top}
 th{color:var(--muted);font-weight:500}.kv td:first-child{color:var(--muted);width:35%}
 footer{color:#555;font-size:12px;text-align:center;padding:10px 0 24px}
+.hr{display:flex;align-items:center;gap:14px}
+#ab{display:none;margin:0;padding:8px 14px;min-height:40px;align-items:center;gap:8px;border-left:4px solid var(--ok)}#ab.on{display:inline-flex}
+#ab.amber{border-left-color:var(--warn)}#ab.red{border-left-color:var(--bad)}
+#ab:focus-visible,.al:focus-visible,.cu-nav button:focus-visible,#x:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.bd{font-size:12px;border-radius:999px;padding:1px 8px;background:#333;font-variant-numeric:tabular-nums}.bd.amber{background:var(--warn);color:#000}.bd.red{background:var(--bad);color:#000}
+.al{display:flex;width:100%;text-align:left;gap:10px;align-items:baseline;margin:8px 0 0;padding:12px 14px;background:#141414;border-left:4px solid var(--gray);min-height:44px}
+.al.amber{border-left-color:var(--warn)}.al.red{border-left-color:var(--bad)}.al .tn{min-width:9em}.al .ln{margin:0;flex:1;min-width:0}
+.cu-why{color:#ccc;font-size:14px;margin:4px 0 0 15px}.cu-row{margin-top:12px}.cu-nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}
+.sum{color:var(--muted);margin:6px 0 2px;font-size:14px}
+#clk{white-space:nowrap}
+@media (max-width:640px){header{align-items:center}.hr{gap:8px}#clk{font-size:13px}.wm{font-size:19px}.wm .sub{display:block;margin:2px 0 0}#ab{padding:8px 10px}.al{flex-direction:column;gap:4px}.al .tn{min-width:0}.cu-nav button{flex:1}#md{margin:8px;padding:14px}}
 @media (max-width:640px){main{padding:12px;gap:10px}header{padding:14px 12px 8px}}
 </style></head>
 <body>
-<header><div class="wm"><span id="ttl">Home</span><span class="sub" id="sub"></span></div><div id="clk"></div></header>
+<header><div class="wm"><span id="ttl">Home</span><span class="sub" id="sub"></span></div><div class="hr"><button id="ab" type="button" aria-label="Alerts" onclick="go('alerts')">Alerts <span class="bd" id="abn">0</span></button><div id="clk"></div></div></header>
 <main id="g"></main>
 <footer id="ft">homehub</footer>
-<div id="ov" onclick="if(event.target.id=='ov')cls()"><div id="md"><div id="mh"><div id="mt"></div><button id="x" onclick="cls()" aria-label="Close">×</button></div><div id="mb"></div></div></div>
+<div id="ov" role="dialog" aria-modal="true" aria-labelledby="mt" onclick="if(event.target.id=='ov')cls()"><div id="md"><div id="mh"><div id="mt"></div><button id="x" onclick="cls()" aria-label="Close">×</button></div><div id="mb"></div></div></div>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -41,7 +52,7 @@ async function J(u,o){try{const r=await fetch(u,Object.assign({cache:'no-store',
 function tileHTML(t){
   const ls=(t.lines||[]).map(l=>`<div class="ln"><span class="dot ${esc(l.level||'')}"></span><span>${esc(l.text)}</span></div>`).join('');
   const act=t.action?`<button onclick="event.stopPropagation();act('${esc(t.action.post)}')">${esc(t.action.label)}</button>`:'';
-  return `<div class="t ${esc(t.level)}" onclick="openD('${esc(t.id)}')"><div class="th"><span class="tn">${esc(t.title)}</span><span class="st">${esc(t.status||'')}</span></div>${ls}${act}</div>`}
+  return `<div class="t ${esc(t.level)}" role="button" tabindex="0" onclick="openD('${esc(t.id)}')" onkeydown="if(event.key=='Enter'||event.key==' '){event.preventDefault();openD('${esc(t.id)}')}"><div class="th"><span class="tn">${esc(t.title)}</span><span class="st">${esc(t.status||'')}</span></div>${ls}${act}</div>`}
 function render(){$('g').innerHTML=T.map(tileHTML).join('')||'<p style="color:#8a8a8a">No modules enabled. Edit config.json.</p>';if(open)detail()}
 function val(v){if(v===null||v===undefined)return'—';if(typeof v=='object')return esc(JSON.stringify(v));return esc(v)}
 function table(rows){if(!rows||!rows.length)return'';const ks=Object.keys(rows[0]).filter(k=>typeof rows[0][k]!='object'||rows[0][k]===null);
@@ -53,13 +64,35 @@ function detailHTML(d){let h='';if(!d)return'<p style="color:#8a8a8a">No details
     else if(v&&typeof v=='object'&&!Array.isArray(v))h+=`<h3>${esc(k)}</h3><table class="kv">${Object.entries(v).map(([a,b])=>`<tr><td>${esc(a)}</td><td>${val(b)}</td></tr>`).join('')}</table>`;
     else if(!Array.isArray(v))h+=`<p><span style="color:#8a8a8a">${esc(k)}:</span> ${val(v)}</p>`}
   return h}
-function detail(){const t=T.find(x=>x.id==open);if(!t)return cls();$('mt').textContent=t.title;$('mb').innerHTML=detailHTML(t.detail)}
-function openD(id){open=id;detail();$('ov').classList.add('on')}
-function cls(){open=null;$('ov').classList.remove('on')}
+
+// Alerts tab (optional module alerts_tab): #alerts lists every amber/red tile, #alert:<id> shows only its culprit.
+let A=null,AON=false;const LV=l=>l=='red'?2:l=='amber'?1:0;
+function badge(){if(!AON||!A)return;const n=A.alerts.length,b=$('ab'),w=A.red?'red':A.amber?'amber':'';
+  b.className='on '+w;$('abn').className='bd '+w;$('abn').textContent=n;b.setAttribute('aria-label',`Alerts: ${A.red} problems, ${A.amber} warnings`)}
+function sumTxt(){return A.alerts.length?`${A.red} problem${A.red==1?'':'s'} · ${A.amber} warning${A.amber==1?'':'s'}`:'All clear. Nothing is amber or red.'}
+function alertsHTML(){return `<p class="sum">${sumTxt()}</p>`+A.alerts.map(a=>{const S=a.summary.length?a.summary:a.lines,l=S[0]||{text:a.status,level:a.level};
+  return `<button type="button" class="al ${esc(a.level)}" onclick="go('alert:${esc(a.id)}')"><span class="tn">${esc(a.title)}</span><span class="ln"><span class="dot ${esc(l.level)}"></span><span>${esc(l.text)}${S.length>1?` <span style="color:#8a8a8a">+${S.length-1} more</span>`:''}</span></span></button>`}).join('')}
+function culpritHTML(id){const a=A.alerts.find(x=>x.id==id);const nav=`<div class="cu-nav"><button type="button" onclick="go('alerts')">← All alerts</button>${T.find(t=>t.id==id)?`<button type="button" onclick="go('${esc(id)}')">Full detail →</button>`:''}</div>`;
+  if(!a)return `<p class="sum">This alert has cleared.</p>`+nav;
+  const ls=a.lines.map(l=>`<div class="ln"><span class="dot ${esc(l.level)}"></span><span>${esc(l.text)}</span></div>`).join('');
+  const rs=a.rows.map(r=>`<div class="cu-row"><div class="ln"><span class="dot ${esc(r.level)}"></span><b>${esc(r.name)}</b></div>${r.why?`<div class="cu-why">• ${esc(r.why)}</div>`:''}${r.kv.length?`<table class="kv">${r.kv.map(([k,v])=>`<tr><td>${esc(k)}</td><td>${val(v)}</td></tr>`).join('')}</table>`:''}</div>`).join('');
+  return `<p class="sum">${esc(a.status)}</p>${ls}${rs}${nav}`}
+function view(){const h=decodeURIComponent(location.hash.slice(1));
+  if(!h){open=null;$('ov').classList.remove('on');return}
+  if(h=='alerts'||h.startsWith('alert:')){if(!AON||!A)return;open=h;$('mt').textContent=h=='alerts'?'Alerts':'Alert · '+((A.alerts.find(a=>'alert:'+a.id==h)||{}).title||h.slice(6));
+    $('mb').innerHTML=h=='alerts'?alertsHTML():culpritHTML(h.slice(6))}
+  else{if(!T.find(x=>x.id==h))return;open=h;detail()}
+  if(!$('ov').classList.contains('on')){$('ov').classList.add('on');$('x').focus()}}
+function go(h){if(location.hash.slice(1)==h)view();else location.hash=h}
+async function loadA(){if(!AON)return;const r=await J('/api/alerts');if(r&&r.alerts){A=r;badge();if(open&&(open=='alerts'||open.startsWith('alert:')))view()}}
+window.addEventListener('hashchange',view);
+function detail(){if(open=='alerts'||String(open).startsWith('alert:'))return view();const t=T.find(x=>x.id==open);if(!t)return cls();$('mt').textContent=t.title;$('mb').innerHTML=detailHTML(t.detail)}
+function openD(id){go(id)}
+function cls(){open=null;$('ov').classList.remove('on');if(location.hash)history.replaceState(null,'',location.pathname+location.search)}
 async function act(u){const r=await J(u,{method:'POST'});if(r&&r.error)alert(r.error);await load()}
-async function load(){const r=await J('/api/tiles');if(r){T=r.tiles;render();$('ft').textContent='updated '+new Date(r.generated*1000).toLocaleTimeString()}}
-async function init(){const m=await J('/api/modules');if(m){$('ttl').textContent=m.site.title;$('sub').textContent=m.site.subtitle||'';document.title=m.site.title}
-  await load();setInterval(load,10000)}
+async function load(){const r=await J('/api/tiles');if(r){T=r.tiles;render();await loadA();$('ft').textContent='updated '+new Date(r.generated*1000).toLocaleTimeString()}}
+async function init(){const m=await J('/api/modules');if(m){$('ttl').textContent=m.site.title;$('sub').textContent=m.site.subtitle||'';document.title=m.site.title;AON=(m.modules||[]).includes('alerts_tab')}
+  await load();view();setInterval(load,10000)}
 setInterval(()=>{$('clk').textContent=new Date().toLocaleString([], {weekday:'short',hour:'2-digit',minute:'2-digit'})},1000);
 document.addEventListener('keydown',e=>{if(e.key=='Escape')cls()});
 init();

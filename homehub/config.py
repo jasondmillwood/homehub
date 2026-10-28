@@ -3,7 +3,8 @@ import copy, json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXAMPLE = os.path.join(os.path.dirname(HERE), "config.example.json")
-MODULE_NAMES = ("starlink", "speedtest", "drives", "backups", "machines", "gpu", "alerts", "explain")
+MODULE_NAMES = ("starlink", "speedtest", "drives", "backups", "machines", "gpu", "alerts", "explain", "alerts_tab")
+TILE_MODULES = ("starlink", "speedtest", "drives", "backups", "machines", "gpu")
 LEVELS = {"gray": 0, "green": 0, "amber": 1, "red": 2}
 
 
@@ -69,7 +70,10 @@ def load(path=None, env=None, warn=print):
 
 
 def enabled(cfg, name):
-    return bool(cfg["modules"].get(name, {}).get("enabled"))
+    v = cfg["modules"].get(name, {}).get("enabled")
+    if v == "auto":         # on only when some module that makes tiles (its data source) is on
+        return any(enabled(cfg, m) for m in TILE_MODULES)
+    return bool(v)
 
 
 def secret(cfg, key):
@@ -104,6 +108,12 @@ def validate(cfg):
         errs.append("alerts.ntfy_topic is empty")
     if m["alerts"]["min_level"] not in ("amber", "red"):
         errs.append("alerts.min_level must be amber or red")
+    if m["alerts_tab"]["enabled"] not in (True, False, "auto"):
+        errs.append("alerts_tab.enabled must be true, false or \"auto\"")
+    if m["alerts_tab"]["min_level"] not in ("amber", "red"):
+        errs.append("alerts_tab.min_level must be amber or red")
+    if not isinstance(m["alerts_tab"]["labels"], dict):
+        errs.append("alerts_tab.labels must map tile ids to names")
     if m["explain"]["enabled"] and not cfg["secrets"].get("xai_api_key_file"):
         errs.append("explain needs secrets.xai_api_key_file")
     ids = [j.get("id") for j in m["backups"]["jobs"]]

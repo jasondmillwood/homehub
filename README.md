@@ -122,5 +122,35 @@ State-changing requests need the hub token (`X-Hub-Token`) or the dashboard sess
 ## Security
 Run it on a trusted LAN or private VPN; never forward its port. See [SECURITY.md](SECURITY.md).
 
+## Built to be extended
+
+homehub is meant as a base: keep what you need, switch the rest off, and add your own pieces.
+
+**Adding a module.** Each module is one file in `homehub/modules/`. It subclasses `Module` from `homehub/core.py` and ends with `MODULE = YourClass`. Override what you need:
+
+- `tile()` returns `{"level", "status", "lines": [{"text", "level"}], "detail"}` (or `None` for no tile). The dashboard draws it with no front-end changes.
+- `routes()` returns `{("GET", "/api/yours"): handler}`. Handlers get the request and return `(status, obj)`.
+- `start()` starts background jobs with `self.ctx.every(name, seconds, fn)`.
+- `init_db(db)` creates tables. Use `with self.ctx.db() as db:` for queries; it always closes the connection.
+
+Then register it:
+1. Add the name to `MODULE_NAMES` in `homehub/config.py`. If it draws a tile, add it to `TILE_MODULES` too.
+2. Add `"yours": {"enabled": false, ...}` under `modules` in `config.example.json`. Defaults come from that file.
+
+A disabled module draws no tile, registers no route and starts no job. Tests check this.
+
+```python
+from ..core import Module
+
+class Hello(Module):
+    name, title, order = "hello", "Hello", 90
+    def tile(self):
+        return {"level": "green", "status": "ok", "lines": [{"text": "hi", "level": "green"}]}
+
+MODULE = Hello
+```
+
+**Forks, spoons and knives welcome.** Fork it, spoon it (take a piece), knife it (cut it down to one tile): all of it is welcome, credited or not. You don't need to ask. There are no conditions beyond the MIT license.
+
 ## License
 MIT, see [LICENSE](LICENSE). External programs it can call are listed in [THIRD_PARTY_LICENSES](THIRD_PARTY_LICENSES).

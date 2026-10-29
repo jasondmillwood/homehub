@@ -3,8 +3,8 @@ import copy, json, os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 EXAMPLE = os.path.join(os.path.dirname(HERE), "config.example.json")
-MODULE_NAMES = ("starlink", "speedtest", "drives", "backups", "machines", "gpu", "alerts", "explain", "alerts_tab")
-TILE_MODULES = ("starlink", "speedtest", "drives", "backups", "machines", "gpu")
+MODULE_NAMES = ("starlink", "speedtest", "drives", "backups", "machines", "gpu", "alerts", "explain", "alerts_tab", "ups")
+TILE_MODULES = ("starlink", "speedtest", "drives", "backups", "machines", "gpu", "ups")
 LEVELS = {"gray": 0, "green": 0, "amber": 1, "red": 2}
 
 
@@ -103,6 +103,12 @@ def validate(cfg):
         if isinstance(v, str) and v and not (v.startswith("/") or v.startswith("~")):
             errs.append(f"secrets.{k} must be an absolute file path, not a value")
     m = cfg["modules"]
+    u = m.get("ups") or {}
+    if u.get("enabled"):
+        if not isinstance(u.get("host"), str) or not u["host"] or not isinstance(u.get("name"), str) or not u["name"]:
+            errs.append("ups.host and ups.name are required (the upsd host and the UPS name from ups.conf)")
+        if not isinstance(u.get("port"), int) or not 0 < u["port"] < 65536:
+            errs.append("ups.port must be a TCP port (NUT default 3493)")
     if m["speedtest"]["enabled"]:
         if m["speedtest"]["tool"] not in ("ookla", "librespeed"):
             errs.append("speedtest.tool must be ookla or librespeed")

@@ -78,7 +78,11 @@ def enabled(cfg, name):
 
 def secret(cfg, key):
     """Read a secret from the file named in cfg.secrets[key]; None if unset or missing."""
-    p = cfg["secrets"].get(key)
+    return read_secret_file(cfg["secrets"].get(key))
+
+
+def read_secret_file(p):
+    """Contents of a secret file (stripped), None if unset, missing or empty."""
     if not p:
         return None
     try:
@@ -122,4 +126,9 @@ def validate(cfg):
     names = [h.get("name") for h in m["machines"]["hosts"]]
     if len(names) != len(set(names)) or not all(isinstance(n, str) and n.replace("-", "").isalnum() for n in names):
         errs.append("machines.hosts[].name must be unique, letters/digits/-")
+    tfs = [h.get("token_file") for h in m["machines"]["hosts"] if h.get("token_file")]
+    if not all(isinstance(t, str) and os.path.isabs(t) for t in tfs):
+        errs.append("machines.hosts[].token_file must be an absolute file path, not a value")
+    if len(tfs) != len(set(tfs)):
+        errs.append("machines.hosts[].token_file must be different for every host")
     return errs

@@ -115,6 +115,11 @@ or `red`. `hide_fields`: detail fields never shown in a culprit view.
 v0.1.0 ships Linux helper scripts only. Any machine (Windows, macOS, a NAS) can still report by POSTing JSON
 to `/api/machines/push?host=<name>` with the `X-Hub-Token` header, e.g. `{"ts": 1700000000, "disk_free_pct": 41}`.
 
+**Per-host push tokens (optional, off by default).** Give a push host its own `"token_file": "/abs/path"` and every push host
+must use its own token: the hub decides the host from *which* token matched (`?host=` is optional and must agree, else 403),
+and the shared hub token is no longer accepted for machine pushes. Bodies over 8 KB get 413 in per-host mode (16 KB in legacy mode). `GET /api/machines?history=<name>`
+returns that host's reports from the last 24 h; each pushing machine also has a `stale` flag. See MIGRATION.md.
+
 ## API
 Read-only: `GET /api/health`, `/api/modules`, `/api/tiles`, plus each module's `/api/<module>...`.
 State-changing requests need the hub token (`X-Hub-Token`) or the dashboard session plus a same-origin request.
